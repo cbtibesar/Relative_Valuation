@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 
 class Stock(models.Model):
-    ticker = models.CharField(max_length=5)
+    ticker = models.CharField(max_length=5, unique=True, primary_key=True)
     start_date = models.DateTimeField(default=timezone.now)
     company_name = models.CharField(max_length=50)
     sector = models.CharField(max_length=50)

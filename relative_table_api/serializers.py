@@ -18,7 +18,7 @@ class StockSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Stock
-        fields = ['id', 'ticker', 'company_name','sector', 'current_price', 'market_cap', 'enterprise_value', 'forward_pe', 'enterprise_to_rev', 'enterprise_to_ebitda', 'profit_margins', 'roe']
+        fields = ['ticker', 'company_name','sector', 'current_price', 'market_cap', 'enterprise_value', 'forward_pe', 'enterprise_to_rev', 'enterprise_to_ebitda', 'profit_margins', 'roe']
         extra_kwargs = {'relative_tables': {'required': False}}
 
     # def create(self, validated_data):
@@ -26,7 +26,7 @@ class StockSerializer(serializers.ModelSerializer):
 
 
 class RelativeTableSerializer(serializers.ModelSerializer):
-    stocks = StockSerializer(many=True, read_only=True)
+    stocks = StockSerializer(many=True)
     class Meta:
         model = RelativeTable
         fields = ['id', 'title', 'stocks']
