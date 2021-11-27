@@ -1,4 +1,5 @@
 *migrations*
-*__pychache__*
+*__pycache__*
 *db.sqlite3
 *.DS_Store*
+.gitignore
