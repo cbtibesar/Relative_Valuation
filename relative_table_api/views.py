@@ -7,12 +7,38 @@ import yfinance as yf
 import json
 
 
-class RelativeTableViewSet(viewsets.ModelViewSet):
+class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = RelativeTable.objects.all()
+    serializer_class = RelativeTableSerializer
+
+    def update(self, request, pk, *args, **kwargs):
+        relative_table = RelativeTable.objects.get(id=pk)
+
+        tickers = self.request.data.get('stocks')
+        title = self.request.data.get('title')
+
+        if title is not None:
+            RelativeTable.objects.filter(id=pk).update(title=title)
+        if tickers is not None:
+            for ticker in tickers:
+                ticker = ticker.upper()
+                stock = Stock.objects.get(ticker=ticker)
+                relative_table = RelativeTable.objects.get(id=pk)
+                relative_table.stocks.add(stock)
+                relative_table.save()
+
+
+        return Response("Updated successfully", status=204)
+
+
+class RelativeList(generics.ListCreateAPIView):
     queryset = RelativeTable.objects.all()
     serializer_class = RelativeTableSerializer
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(user=user)
+        if serializer.is_valid():
+            serializer.save(user=user)
+
 
 class StockList(generics.ListCreateAPIView):
     queryset = Stock.objects.all()

@@ -11,5 +11,5 @@ urlpatterns = [
     path('user/', include('users.urls', namespace='users')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('relative/', include('relative_table_api.urls', namespace='relative_table'))
+    path('stock_api/', include('relative_table_api.urls', namespace='relative_table'))
 ]

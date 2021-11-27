@@ -14,21 +14,15 @@ class StockSerializer(serializers.ModelSerializer):
     enterprise_to_ebitda = serializers.FloatField(required=False)
     profit_margins = serializers.FloatField(required=False)
     roe = serializers.FloatField(required=False)
-    # relative_tables = RelativeTableSerializer(many=True, read_only=True)
 
     class Meta:
         model = Stock
         fields = ['ticker', 'company_name','sector', 'current_price', 'market_cap', 'enterprise_value', 'forward_pe', 'enterprise_to_rev', 'enterprise_to_ebitda', 'profit_margins', 'roe']
         extra_kwargs = {'relative_tables': {'required': False}}
 
-    # def create(self, validated_data):
-    #     return Stock.objects.create(**validated_data)
-
-
 class RelativeTableSerializer(serializers.ModelSerializer):
-    stocks = StockSerializer(many=True)
+    stocks = StockSerializer(many=True, required=False)
     class Meta:
         model = RelativeTable
         fields = ['id', 'title', 'stocks']
         extra_kwargs = {'stocks': {'required': False}}
-
