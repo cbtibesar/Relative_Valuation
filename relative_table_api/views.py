@@ -5,77 +5,81 @@ from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
 import yfinance as yf
 import json
+from django.shortcuts import get_object_or_404
+from django.core import serializers
 
 
 class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = RelativeTable.objects.all()
     serializer_class = RelativeTableSerializer
 
-    def update(self, request, pk, *args, **kwargs):
-        relative_table = RelativeTable.objects.get(id=pk)
 
+
+
+    def get_object(self, queryset=None, **kwargs):
+            url = self.kwargs.get('pk')
+            return get_object_or_404(RelativeTable, url=url)
+
+    def patch(self, request, pk, *args, **kwargs):
+        relative_table = RelativeTable.objects.get(url=pk)
         tickers = self.request.data.get('stocks')
         title = self.request.data.get('title')
-
+        response_data = []
         if title is not None:
-            RelativeTable.objects.filter(id=pk).update(title=title)
+            RelativeTable.objects.filter(url=pk).update(title=title)
         if tickers is not None:
             for ticker in tickers:
                 ticker = ticker.upper()
+                stock_data = create_stock(ticker)
+                response_data.append(stock_data)
+                if not Stock.objects.filter(ticker=ticker).exists():
+                    stock_serializer = StockSerializer(data=stock_data)
+                    stock_serializer.is_valid(raise_exception=True)
+                    stock_serializer.save()
                 stock = Stock.objects.get(ticker=ticker)
-                relative_table = RelativeTable.objects.get(id=pk)
                 relative_table.stocks.add(stock)
                 relative_table.save()
 
+        serializer = RelativeTableSerializer(relative_table)
+        return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
 
-        return Response("Updated successfully", status=204)
+    def put(self, request, pk, *args, **kwargs):
+        relative_table = RelativeTable.objects.get(url=pk)
+        tickers = self.request.data.get('stocks_to_remove')
+        if tickers is not None:
+            for ticker in tickers:
+                if Stock.objects.filter(ticker=ticker).exists():
+                    stock = Stock.objects.get(ticker=ticker)
+                    relative_table.stocks.remove(stock)
+
+        serializer = RelativeTableSerializer(relative_table)
+        return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
 
 
 class RelativeList(generics.ListCreateAPIView):
-    queryset = RelativeTable.objects.all()
+    permission_classes = [IsAuthenticated]
+
     serializer_class = RelativeTableSerializer
     def perform_create(self, serializer):
         user = self.request.user
         if serializer.is_valid():
             serializer.save(user=user)
 
+    def get_queryset(self):
+        user=self.request.user
+        return RelativeTable.objects.filter(user=user)
+
 
 class StockList(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
     def create(self, request, *args, **kwargs):
-        def check_for_null_int(info, financial):
-            if info[financial] is None:
-                return -420.69
-            else:
-                return info[financial]
-
-
-        def check_for_null_string(info, financial):
-            if info[financial] is None:
-                return "N/A"
-            else:
-                return info[financial]
-
         ticker = self.request.data.get('ticker')
         table = self.request.data.get('table')
-        info = yf.Ticker(ticker).info
-
-        stock_data = {
-            'ticker': ticker.upper(),
-            'company_name': check_for_null_string(info, "shortName"),
-            'sector': check_for_null_string(info, "sector"),
-            'market_cap': check_for_null_int(info, "marketCap"),
-            'current_price': check_for_null_int(info, "currentPrice"),
-            'enterprise_value': check_for_null_int(info, "enterpriseValue"),
-            'forward_pe': check_for_null_int(info, "forwardPE"),
-            'enterprise_to_rev': check_for_null_int(info, "enterpriseToRevenue"),
-            'enterprise_to_ebitda': check_for_null_int(info, "enterpriseToEbitda"),
-            'profit_margins': check_for_null_int(info, "profitMargins"),
-            'roe': check_for_null_int(info, "returnOnEquity"),
-            'table': table
-        }
+        stock_data = create_stock(ticker)
 
         serializer = self.get_serializer(data=stock_data)
         serializer.is_valid(raise_exception=True)
@@ -88,6 +92,46 @@ class StockList(generics.ListCreateAPIView):
         serializer.save()
 
 
-class StockDetail(generics.RetrieveAPIView):
+class StockDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
+
+def create_stock(ticker):
+
+    info = yf.Ticker(ticker).info
+    def check_for_null_int(info, financial):
+            if info[financial] is None:
+                return -420.69
+            else:
+                return info[financial]
+
+    def check_for_null_string(info, financial):
+        if info[financial] is None:
+            return "N/A"
+        else:
+            return info[financial]
+
+    stock_data = {
+            'ticker': ticker.upper(),
+            'company_name': check_for_null_string(info, "shortName"),
+            'sector': check_for_null_string(info, "sector"),
+            'market_cap': check_for_null_int(info, "marketCap"),
+            'current_price': check_for_null_int(info, "currentPrice"),
+            'enterprise_value': check_for_null_int(info, "enterpriseValue"),
+            'forward_pe': check_for_null_int(info, "forwardPE"),
+            'price_to_book': check_for_null_int(info, "priceToBook"),
+            'price_to_sales': check_for_null_int(info, "priceToSalesTrailing12Months"),
+            'enterprise_to_rev': check_for_null_int(info, "enterpriseToRevenue"),
+            'enterprise_to_ebitda': check_for_null_int(info, "enterpriseToEbitda"),
+            'profit_margins': check_for_null_int(info, "profitMargins"),
+            'roa': check_for_null_int(info, "returnOnAssets"),
+            'roe': check_for_null_int(info, "returnOnEquity"),
+            'leverage': check_for_null_int(info, "debtToEquity"),
+            'beta': check_for_null_int(info, 'beta')
+        }
+    return stock_data
+
+
+
+
