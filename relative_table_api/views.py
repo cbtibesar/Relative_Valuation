@@ -37,12 +37,10 @@ class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
                     response_data.append(stock_data)
                 elif(datetime.now(timezone.utc) - Stock.objects.get(ticker=ticker).edited > timedelta(seconds=24)):
                     stock_data = create_stock(ticker)
-
-                    stock_serializer = StockSerializer(data=stock_data)
+                    stock = Stock.objects.get(ticker=ticker)
+                    stock_serializer = StockSerializer(stock, data=stock_data, partial=True)
                     stock_serializer.is_valid(raise_exception=True)
-
                     stock_serializer.save()
-                    response_data.append(stock_data)
                 stock = Stock.objects.get(ticker=ticker)
                 relative_table.stocks.add(stock)
                 relative_table.save()
