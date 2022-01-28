@@ -6,6 +6,7 @@ from django.template.defaultfilters import slugify
 class Stock(models.Model):
     ticker = models.CharField(max_length=5, unique=True, primary_key=True)
     start_date = models.DateTimeField(default=timezone.now)
+    edited = models.DateTimeField(auto_now=True)
     company_name = models.CharField(max_length=50)
     sector = models.CharField(max_length=50)
     current_price = models.FloatField()
