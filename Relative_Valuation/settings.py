@@ -79,6 +79,8 @@ WSGI_APPLICATION = 'Relative_Valuation.wsgi.application'
 
 AUTH_USER_MODEL = 'users.User'
 
+STOCK_MODEL = 'stock_api.Stock'
+
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
