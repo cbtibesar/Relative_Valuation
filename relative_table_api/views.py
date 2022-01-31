@@ -75,6 +75,7 @@ class RelativeList(generics.ListCreateAPIView):
         return RelativeTable.objects.filter(user=user)
 
 
+
 class StockList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Stock.objects.all()

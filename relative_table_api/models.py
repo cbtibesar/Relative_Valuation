@@ -44,3 +44,4 @@ class RelativeTable(models.Model):
     def save(self, *args, **kwargs):
         self.url = slugify(self.user.username) + '-' + slugify(self.title)
         super().save(*args, **kwargs)
+
