@@ -14,13 +14,19 @@ class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = RelativeTable.objects.all()
     serializer_class = RelativeTableSerializer
 
-
-
-
+    """
+    Get table objects based on the slug (url) field
+    """
     def get_object(self, queryset=None, **kwargs):
             url = self.kwargs.get('pk')
             return get_object_or_404(RelativeTable, url=url)
 
+
+    """
+    Patch is used for adding stocks to a already created table.
+    If the stock already exists, add it to the table.
+    Else create the stock and add it to the table.
+    """
     def patch(self, request, pk, *args, **kwargs):
         relative_table = RelativeTable.objects.get(url=pk)
         tickers = self.request.data.get('stocks')
@@ -44,6 +50,9 @@ class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
         serializer = RelativeTableSerializer(relative_table)
         return Response(data=serializer.data, status=status.HTTP_202_ACCEPTED)
 
+    """
+    Put is used for removing stocks from the table
+    """
     def put(self, request, pk, *args, **kwargs):
         relative_table = RelativeTable.objects.get(url=pk)
         tickers = self.request.data.get('stocks_to_remove')
@@ -59,8 +68,11 @@ class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
 
 class RelativeList(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-
     serializer_class = RelativeTableSerializer
+
+    """
+    Get user from request when creating and listing tables
+    """
     def perform_create(self, serializer):
         user = self.request.user
         if serializer.is_valid():
@@ -98,7 +110,6 @@ class StockDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = StockSerializer
 
 def create_stock(ticker):
-
     info = yf.Ticker(ticker).info
     def check_for_null_int(info, financial):
             if info[financial] is None:
