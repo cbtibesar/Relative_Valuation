@@ -7,6 +7,7 @@ import yfinance as yf
 import json
 from django.shortcuts import get_object_or_404
 from django.core import serializers
+from datetime import datetime, timezone, timedelta
 
 
 class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -37,10 +38,16 @@ class RelativeDetail(generics.RetrieveUpdateDestroyAPIView):
         if tickers is not None:
             for ticker in tickers:
                 ticker = ticker.upper()
-                stock_data = create_stock(ticker)
-                response_data.append(stock_data)
                 if not Stock.objects.filter(ticker=ticker).exists():
+                    stock_data = create_stock(ticker)
                     stock_serializer = StockSerializer(data=stock_data)
+                    stock_serializer.is_valid(raise_exception=True)
+                    stock_serializer.save()
+                    response_data.append(stock_data)
+                elif(datetime.now(timezone.utc) - Stock.objects.get(ticker=ticker).edited > timedelta(seconds=24)):
+                    stock_data = create_stock(ticker)
+                    stock = Stock.objects.get(ticker=ticker)
+                    stock_serializer = StockSerializer(stock, data=stock_data, partial=True)
                     stock_serializer.is_valid(raise_exception=True)
                     stock_serializer.save()
                 stock = Stock.objects.get(ticker=ticker)
@@ -81,6 +88,7 @@ class RelativeList(generics.ListCreateAPIView):
     def get_queryset(self):
         user=self.request.user
         return RelativeTable.objects.filter(user=user)
+
 
 
 class StockList(generics.ListCreateAPIView):
